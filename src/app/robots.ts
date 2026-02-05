@@ -37,6 +37,14 @@ export default function robots(): MetadataRoute.Robots {
         userAgent: 'Claude-Web',
         disallow: '/',
       },
+      {
+        userAgent: 'Bytespider',
+        disallow: '/',
+      },
+      {
+        userAgent: 'Google-Extended',
+        disallow: '/',
+      },
     ],
     sitemap: `${baseUrl}/sitemap.xml`,
     host: baseUrl,
