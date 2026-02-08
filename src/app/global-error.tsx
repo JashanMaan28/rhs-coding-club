@@ -13,10 +13,10 @@ export default function GlobalError({
   reset: () => void;
 }) {
   return (
-    <html>
+    <html lang="en">
       <body>
         <Container className="flex min-h-screen items-center justify-center">
-          <div className="text-center space-y-6 max-w-lg mx-auto px-4">
+          <div className="text-center space-y-6 max-w-lg mx-auto px-4" role="alert">
             {/* Error digest for debugging (visually hidden) */}
             {error?.digest ? (
               <span className="sr-only">Error digest: {error.digest}</span>
