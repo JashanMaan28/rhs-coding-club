@@ -1,3 +1,4 @@
+import React from 'react';
 import Link from 'next/link';
 import { formatDistance } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,7 +11,7 @@ interface BlogPostCardProps {
   showStatus?: boolean; // For admin view
 }
 
-export function BlogPostCard({ post, showStatus = false }: BlogPostCardProps) {
+export const BlogPostCard = React.memo(function BlogPostCard({ post, showStatus = false }: BlogPostCardProps) {
   const publishedDate = post.createdAt.toDate();
   const timeAgo = formatDistance(publishedDate, new Date(), { addSuffix: true });
 
@@ -59,4 +60,4 @@ export function BlogPostCard({ post, showStatus = false }: BlogPostCardProps) {
       </CardContent>
     </Card>
   );
-}
+});

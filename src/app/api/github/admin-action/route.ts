@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { githubService } from '@/lib/services/github';
+import { verifyAdminOrOfficer } from '@/lib/firebase-admin';
 
 export async function POST(req: NextRequest) {
   try {
+    const authResult = await verifyAdminOrOfficer(req);
+    if (!authResult.authorized) return authResult.response;
+
     const { action, githubUsername, requestId, adminNotes } = await req.json();
 
     if (!action || !githubUsername || !requestId) {

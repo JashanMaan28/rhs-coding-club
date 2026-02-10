@@ -1,3 +1,4 @@
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,7 +12,7 @@ interface ProjectCardProps {
   project: ProjectWithAuthor;
 }
 
-export function ProjectCard({ project }: ProjectCardProps) {
+export const ProjectCard = React.memo(function ProjectCard({ project }: ProjectCardProps) {
   const createdDate = project.createdAt.toDate();
 
   return (
@@ -100,4 +101,4 @@ export function ProjectCard({ project }: ProjectCardProps) {
       </CardContent>
     </Card>
   );
-}
+});

@@ -22,7 +22,7 @@ interface ChallengeManagementProps {
 }
 
 export function ChallengeManagement({ challenges, onChallengeUpdate }: ChallengeManagementProps) {
-  const { userProfile } = useAuth();
+  const { user, userProfile } = useAuth();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingChallenge, setEditingChallenge] = useState<Challenge | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -125,10 +125,12 @@ export function ChallengeManagement({ challenges, onChallengeUpdate }: Challenge
         if (formData.published && newChallengeId) {
           try {
             const challengeUrl = `${window.location.origin}/challenges/${newChallengeId}`;
+            const token = await user?.getIdToken();
             const response = await fetch('/api/send-challenge-notification', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
+                ...(token && { Authorization: `Bearer ${token}` }),
               },
               body: JSON.stringify({
                 challengeTitle: formData.title,

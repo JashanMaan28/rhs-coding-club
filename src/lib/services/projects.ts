@@ -90,19 +90,26 @@ export class ProjectService {
       ...doc.data()
     })) as Project[];
 
-    // Get author information for each project
-    const projectsWithAuthors = await Promise.all(
-      projects.map(async (project) => {
-        const authorDoc = await getDoc(doc(this.usersCollection, project.authorId));
-        const authorData = authorDoc.data();
-        
-        return {
-          ...project,
-          authorName: authorData?.displayName || authorData?.name || 'Unknown',
-          authorEmail: authorData?.email || '',
-        } as ProjectWithAuthor;
-      })
+    // Batch-fetch unique authors instead of N+1 queries
+    const uniqueAuthorIds = [...new Set(projects.map(p => p.authorId))];
+    const authorDocs = await Promise.all(
+      uniqueAuthorIds.map(id => getDoc(doc(this.usersCollection, id)))
     );
+    const authorMap = new Map<string, { displayName?: string; name?: string; email?: string }>();
+    for (const authorDoc of authorDocs) {
+      if (authorDoc.exists()) {
+        authorMap.set(authorDoc.id, authorDoc.data() as { displayName?: string; name?: string; email?: string });
+      }
+    }
+
+    const projectsWithAuthors = projects.map(project => {
+      const authorData = authorMap.get(project.authorId);
+      return {
+        ...project,
+        authorName: authorData?.displayName || authorData?.name || 'Unknown',
+        authorEmail: authorData?.email || '',
+      } as ProjectWithAuthor;
+    });
 
     // Apply tag filters in memory (since Firestore doesn't support array-contains-any with other filters)
     if (filters.tags && filters.tags.length > 0) {

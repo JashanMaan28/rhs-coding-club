@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { brevoService } from '@/lib/brevo';
 import { getEmailSettingsWithDefaults } from '@/lib/services/settings';
+import { verifyAdminOrOfficer } from '@/lib/firebase-admin';
 
 export async function POST(request: NextRequest) {
   try {
+    const authResult = await verifyAdminOrOfficer(request);
+    if (!authResult.authorized) return authResult.response;
+
     const body = await request.json();
     const { recipientEmail, recipientName } = body;
 

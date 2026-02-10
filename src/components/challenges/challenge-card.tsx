@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -12,7 +13,7 @@ interface ChallengeCardProps {
   userSubmission?: { status: string } | null;
 }
 
-export function ChallengeCard({ challenge, userSubmission }: ChallengeCardProps) {
+export const ChallengeCard = React.memo(function ChallengeCard({ challenge, userSubmission }: ChallengeCardProps) {
   const getDifficultyVariant = (difficulty: string) => {
     switch (difficulty) {
       case 'easy':
@@ -78,4 +79,4 @@ export function ChallengeCard({ challenge, userSubmission }: ChallengeCardProps)
       </CardContent>
     </Card>
   );
-}
+});

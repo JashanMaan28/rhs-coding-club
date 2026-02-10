@@ -2,9 +2,13 @@ import { brevoService } from '@/lib/brevo';
 import { newsletterSubscribersCollection } from '@/lib/firebase-collections';
 import { NextRequest, NextResponse } from 'next/server';
 import { getDocs } from 'firebase/firestore';
+import { verifyAdminOrOfficer } from '@/lib/firebase-admin';
 
 export async function POST(req: NextRequest) {
   try {
+    const authResult = await verifyAdminOrOfficer(req);
+    if (!authResult.authorized) return authResult.response;
+
     const { challengeTitle, challengeDescription, challengeDifficulty, challengePoints, challengeUrl } = await req.json();
 
     if (!challengeTitle || !challengeDescription || !challengeDifficulty || !challengePoints || !challengeUrl) {

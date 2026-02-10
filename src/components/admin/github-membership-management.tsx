@@ -67,7 +67,7 @@ const STATUS_ICONS = {
 };
 
 export function GitHubMembershipManagement() {
-  const { userProfile } = useAuth();
+  const { user, userProfile } = useAuth();
   const [requests, setRequests] = useState<GitHubMembershipRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedRequest, setSelectedRequest] = useState<GitHubMembershipRequest | null>(null);
@@ -103,10 +103,12 @@ export function GitHubMembershipManagement() {
 
     try {
       // Call API to handle GitHub operations
+      const token = await user?.getIdToken();
       const response = await fetch('/api/github/admin-action', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(token && { Authorization: `Bearer ${token}` }),
         },
         body: JSON.stringify({
           action,

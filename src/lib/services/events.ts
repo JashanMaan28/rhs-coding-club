@@ -89,27 +89,61 @@ export class EventService {
     await batch.commit();
   }
 
+  // Batch-enrich events with RSVP data in minimal queries instead of N+1
+  private async enrichEventsWithRsvps(
+    eventDocs: Array<{ id: string; data: () => Record<string, unknown> }>,
+    userId?: string
+  ): Promise<EventWithRsvps[]> {
+    if (eventDocs.length === 0) return [];
+
+    const eventIds = eventDocs.map(d => d.id);
+    const events = eventDocs.map(d => ({ id: d.id, ...d.data() }) as Event);
+
+    // Batch fetch all RSVPs for these events (Firestore 'in' supports up to 30)
+    const rsvpsByEvent: Record<string, { yes: number; no: number; maybe: number; total: number }> = {};
+    const userRsvpByEvent: Record<string, 'YES' | 'NO' | 'MAYBE' | null> = {};
+
+    // Initialize defaults
+    for (const id of eventIds) {
+      rsvpsByEvent[id] = { yes: 0, no: 0, maybe: 0, total: 0 };
+      userRsvpByEvent[id] = null;
+    }
+
+    // Chunk eventIds into groups of 30 for Firestore 'in' query limit
+    for (let i = 0; i < eventIds.length; i += 30) {
+      const chunk = eventIds.slice(i, i + 30);
+      const rsvpSnapshot = await getDocs(
+        query(this.rsvpsCollection, where('eventId', 'in', chunk))
+      );
+
+      for (const rsvpDoc of rsvpSnapshot.docs) {
+        const rsvp = rsvpDoc.data() as Rsvp;
+        const counts = rsvpsByEvent[rsvp.eventId];
+        if (counts) {
+          counts.total++;
+          if (rsvp.status === 'YES') counts.yes++;
+          else if (rsvp.status === 'NO') counts.no++;
+          else if (rsvp.status === 'MAYBE') counts.maybe++;
+        }
+        if (userId && rsvp.userId === userId) {
+          userRsvpByEvent[rsvp.eventId] = rsvp.status;
+        }
+      }
+    }
+
+    return events.map(event => ({
+      ...event,
+      rsvpCount: rsvpsByEvent[event.id],
+      userRsvp: userRsvpByEvent[event.id],
+    }));
+  }
+
   // Get all events with RSVP counts
   async getAllEvents(userId?: string): Promise<EventWithRsvps[]> {
     const eventsSnapshot = await getDocs(
       query(this.eventsCollection, orderBy('date', 'desc'))
     );
-    
-    const events = await Promise.all(
-      eventsSnapshot.docs.map(async (eventDoc) => {
-        const eventData = { id: eventDoc.id, ...eventDoc.data() } as Event;
-        const rsvpCounts = await this.getRsvpCounts(eventDoc.id);
-        const userRsvp = userId ? await this.getUserRsvp(eventDoc.id, userId) : null;
-        
-        return {
-          ...eventData,
-          rsvpCount: rsvpCounts,
-          userRsvp,
-        };
-      })
-    );
-    
-    return events;
+    return this.enrichEventsWithRsvps(eventsSnapshot.docs, userId);
   }
 
   // Get upcoming events
@@ -123,22 +157,7 @@ export class EventService {
         limit(limitCount)
       )
     );
-    
-    const events = await Promise.all(
-      eventsSnapshot.docs.map(async (eventDoc) => {
-        const eventData = { id: eventDoc.id, ...eventDoc.data() } as Event;
-        const rsvpCounts = await this.getRsvpCounts(eventDoc.id);
-        const userRsvp = userId ? await this.getUserRsvp(eventDoc.id, userId) : null;
-        
-        return {
-          ...eventData,
-          rsvpCount: rsvpCounts,
-          userRsvp,
-        };
-      })
-    );
-    
-    return events;
+    return this.enrichEventsWithRsvps(eventsSnapshot.docs, userId);
   }
 
   // Get past events
@@ -152,22 +171,7 @@ export class EventService {
         limit(limitCount)
       )
     );
-    
-    const events = await Promise.all(
-      eventsSnapshot.docs.map(async (eventDoc) => {
-        const eventData = { id: eventDoc.id, ...eventDoc.data() } as Event;
-        const rsvpCounts = await this.getRsvpCounts(eventDoc.id);
-        const userRsvp = userId ? await this.getUserRsvp(eventDoc.id, userId) : null;
-        
-        return {
-          ...eventData,
-          rsvpCount: rsvpCounts,
-          userRsvp,
-        };
-      })
-    );
-    
-    return events;
+    return this.enrichEventsWithRsvps(eventsSnapshot.docs, userId);
   }
 
   // Get events by tag
@@ -179,22 +183,7 @@ export class EventService {
         orderBy('date', 'desc')
       )
     );
-    
-    const events = await Promise.all(
-      eventsSnapshot.docs.map(async (eventDoc) => {
-        const eventData = { id: eventDoc.id, ...eventDoc.data() } as Event;
-        const rsvpCounts = await this.getRsvpCounts(eventDoc.id);
-        const userRsvp = userId ? await this.getUserRsvp(eventDoc.id, userId) : null;
-        
-        return {
-          ...eventData,
-          rsvpCount: rsvpCounts,
-          userRsvp,
-        };
-      })
-    );
-    
-    return events;
+    return this.enrichEventsWithRsvps(eventsSnapshot.docs, userId);
   }
 
   // Get single event by ID

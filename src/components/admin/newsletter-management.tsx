@@ -11,8 +11,10 @@ import { Mail, Users, Send, History } from 'lucide-react';
 import { toast } from 'sonner';
 import { getDocs } from 'firebase/firestore';
 import { newsletterSubscribersCollection } from '@/lib/firebase-collections';
+import { useAuth } from '@/contexts/auth-context';
 
 export function NewsletterManagement() {
+  const { user } = useAuth();
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
@@ -47,10 +49,12 @@ export function NewsletterManagement() {
 
     try {
       // Send newsletter via API
+      const token = await user?.getIdToken();
       const response = await fetch('/api/send-newsletter', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(token && { Authorization: `Bearer ${token}` }),
         },
         body: JSON.stringify({
           subject: subject.trim(),

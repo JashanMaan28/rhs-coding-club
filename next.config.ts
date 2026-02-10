@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   // Enable experimental features
   experimental: {
-    optimizePackageImports: ['lucide-react', '@radix-ui/react-icons', '@tabler/icons-react', 'three', 'postprocessing'],
+    optimizePackageImports: ['lucide-react', '@radix-ui/react-icons', 'three', 'postprocessing'],
   },
   
   // Image optimization

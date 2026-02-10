@@ -1,13 +1,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { 
-  collection, 
-  query, 
-  where, 
-  orderBy, 
-  limit, 
+import {
+  collection,
+  doc,
+  query,
+  where,
+  orderBy,
+  limit,
   getDocs,
+  getDoc,
   getCountFromServer,
   Timestamp
 } from 'firebase/firestore';
@@ -108,72 +110,55 @@ export function useHomepageData() {
 
   const fetchFeaturedProjects = async () => {
     try {
-      const projectsQuery = query(
-        collection(db, 'projects'),
-        where('approved', '==', true),
-        where('featured', '==', true),
-        orderBy('createdAt', 'desc'),
-        limit(6)
-      );
-
-      const projectsSnapshot = await getDocs(projectsQuery);
-      const projects: FeaturedProject[] = [];
-
-      // Fetch author information for each project
-      for (const doc of projectsSnapshot.docs) {
-        const projectData = doc.data() as Project;
-        
-        // Get author information
-        const authorDoc = await getDocs(
-          query(collection(db, 'users'), where('__name__', '==', projectData.authorId), limit(1))
-        );
-        
-        const authorName = authorDoc.docs[0]?.data()?.displayName || 'Anonymous';
-
-        projects.push({
-          id: doc.id,
-          title: projectData.title,
-          description: projectData.description,
-          technologies: projectData.tech || [],
-          github: projectData.repoUrl,
-          demo: projectData.demoUrl,
-          contributors: 1, // For now, assume 1 contributor per project
-          authorName,
-        });
-      }
-
-      // If no featured projects, get regular approved projects
-      if (projects.length === 0) {
-        const fallbackQuery = query(
+      let projectsSnapshot = await getDocs(
+        query(
           collection(db, 'projects'),
           where('approved', '==', true),
+          where('featured', '==', true),
           orderBy('createdAt', 'desc'),
           limit(6)
+        )
+      );
+
+      // If no featured projects, fall back to any approved projects
+      if (projectsSnapshot.empty) {
+        projectsSnapshot = await getDocs(
+          query(
+            collection(db, 'projects'),
+            where('approved', '==', true),
+            orderBy('createdAt', 'desc'),
+            limit(6)
+          )
         );
+      }
 
-        const fallbackSnapshot = await getDocs(fallbackQuery);
-        
-        for (const doc of fallbackSnapshot.docs) {
-          const projectData = doc.data() as Project;
-          
-          const authorDoc = await getDocs(
-            query(collection(db, 'users'), where('__name__', '==', projectData.authorId), limit(1))
-          );
-          
-          const authorName = authorDoc.docs[0]?.data()?.displayName || 'Anonymous';
+      const projectDocs = projectsSnapshot.docs.map(d => ({
+        id: d.id,
+        data: d.data() as Project,
+      }));
 
-          projects.push({
-            id: doc.id,
-            title: projectData.title,
-            description: projectData.description,
-            technologies: projectData.tech || [],
-            github: projectData.repoUrl,
-            demo: projectData.demoUrl,
-            contributors: 1,
-            authorName,
-          });
+      // Batch-fetch unique authors with getDoc instead of N+1 queries
+      const uniqueAuthorIds = [...new Set(projectDocs.map(p => p.data.authorId))];
+      const authorDocs = await Promise.all(
+        uniqueAuthorIds.map(id => getDoc(doc(collection(db, 'users'), id)))
+      );
+      const authorMap = new Map<string, string>();
+      for (const authorDoc of authorDocs) {
+        if (authorDoc.exists()) {
+          authorMap.set(authorDoc.id, authorDoc.data()?.displayName || 'Anonymous');
         }
       }
+
+      const projects: FeaturedProject[] = projectDocs.map(p => ({
+        id: p.id,
+        title: p.data.title,
+        description: p.data.description,
+        technologies: p.data.tech || [],
+        github: p.data.repoUrl,
+        demo: p.data.demoUrl,
+        contributors: 1,
+        authorName: authorMap.get(p.data.authorId) || 'Anonymous',
+      }));
 
       setFeaturedProjects(projects);
     } catch (err) {

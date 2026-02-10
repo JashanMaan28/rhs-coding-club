@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,7 +18,7 @@ interface EventCardProps {
   compact?: boolean;
 }
 
-export function EventCard({
+export const EventCard = React.memo(function EventCard({
   event,
   onRsvpChange,
   showRsvpButton = true,
@@ -70,6 +71,7 @@ export function EventCard({
               size={compact ? "sm" : "default"}
               onClick={() => window.open(googleCalendarUrl, '_blank')}
               className="gap-2"
+              aria-label="Add to Google Calendar"
             >
               <ExternalLink className="h-4 w-4" />
               {compact ? "" : "Add to Calendar"}
@@ -118,4 +120,4 @@ export function EventCard({
       </CardContent>
     </Card>
   );
-}
+});

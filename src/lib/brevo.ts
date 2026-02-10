@@ -23,6 +23,18 @@ export interface TransactionalEmail {
   replyTo?: { email: string; name?: string };
 }
 
+/** Escape HTML entities to prevent XSS in email templates */
+function escapeHtml(text: string): string {
+  const map: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;',
+  };
+  return text.replace(/[&<>"']/g, (m) => map[m]);
+}
+
 class BrevoService {
   private readonly apiKey = process.env.BREVO_API_KEY;
   private apiInstance: TransactionalEmailsApi | null = null;
@@ -290,7 +302,7 @@ class BrevoService {
                     <p>We're excited to have you join our community</p>
                 </div>
                 <div class="content">
-                    <h2>Hey ${name}!</h2>
+                    <h2>Hey ${escapeHtml(name)}!</h2>
                     <p>We're thrilled to have you join our community of passionate student developers at Ripon High School.</p>
                     
                     <div class="features">
@@ -577,7 +589,7 @@ class BrevoService {
     const emailPromises = subscriberEmails.map(email => {
       const notificationEmailData: TransactionalEmail = {
         to: [{ email }],
-        subject: `🚀 New Coding Challenge: ${challengeTitle}`,
+        subject: `🚀 New Coding Challenge: ${escapeHtml(challengeTitle)}`,
         htmlContent: `
           <!DOCTYPE html>
           <html lang="en">
@@ -672,16 +684,16 @@ class BrevoService {
                       <p>Hey there, coder! We've just released a new coding challenge that we think you'll love.</p>
                       
                       <div class="challenge-card">
-                          <div class="difficulty-badge difficulty-${challengeDifficulty.toLowerCase()}">${challengeDifficulty}</div>
-                          <h3 style="margin: 0 0 8px 0; font-size: 20px; color: #0a0a0a;">${challengeTitle}</h3>
-                          <p style="margin: 0 0 16px 0; color: #52525b;">${challengeDescription}</p>
-                          <p style="margin: 0; font-weight: 600; color: #0a0a0a;">💎 ${challengePoints} points</p>
+                          <div class="difficulty-badge difficulty-${escapeHtml(challengeDifficulty.toLowerCase())}">${escapeHtml(challengeDifficulty)}</div>
+                          <h3 style="margin: 0 0 8px 0; font-size: 20px; color: #0a0a0a;">${escapeHtml(challengeTitle)}</h3>
+                          <p style="margin: 0 0 16px 0; color: #52525b;">${escapeHtml(challengeDescription)}</p>
+                          <p style="margin: 0; font-weight: 600; color: #0a0a0a;">💎 ${escapeHtml(String(challengePoints))} points</p>
                       </div>
 
                       <p>Ready to test your skills? Click the button below to start the challenge!</p>
                       
                       <div style="text-align: center;">
-                          <a href="${challengeUrl}" class="cta-button">Start Challenge</a>
+                          <a href="${escapeHtml(challengeUrl)}" class="cta-button">Start Challenge</a>
                       </div>
 
                       <p>Good luck, and happy coding! 🎯</p>
@@ -755,7 +767,7 @@ class BrevoService {
     
     const notificationEmailData: TransactionalEmail = {
       to: [{ email: emailSettings.replyToEmail, name: emailSettings.senderName }],
-      subject: `New Contact Form Submission: ${subject}`,
+      subject: `New Contact Form Submission: ${escapeHtml(subject)}`,
       htmlContent: `
         <!DOCTYPE html>
         <html lang="en">
@@ -867,20 +879,20 @@ class BrevoService {
                     <table class="info-table">
                         <tr>
                             <td>From:</td>
-                            <td>${senderName}</td>
+                            <td>${escapeHtml(senderName)}</td>
                         </tr>
                         <tr>
                             <td>Email:</td>
-                            <td><a href="mailto:${senderEmail}" style="color: #0a0a0a; font-weight: 500;">${senderEmail}</a></td>
+                            <td><a href="mailto:${encodeURIComponent(senderEmail)}" style="color: #0a0a0a; font-weight: 500;">${escapeHtml(senderEmail)}</a></td>
                         </tr>
                         <tr>
                             <td>Subject:</td>
-                            <td>${subject}</td>
+                            <td>${escapeHtml(subject)}</td>
                         </tr>
                     </table>
                     <h2>Message</h2>
                     <div class="message-box">
-                        ${message.replace(/\n/g, '<br>')}
+                        ${escapeHtml(message).replace(/\n/g, '<br>')}
                     </div>
                 </div>
                 <div class="footer">
@@ -926,7 +938,7 @@ class BrevoService {
         <head>
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>${subject}</title>
+            <title>${escapeHtml(subject)}</title>
             <style>
                 body {
                     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -1023,17 +1035,17 @@ class BrevoService {
                     <p>Stay updated with the latest from our community</p>
                 </div>
                 <div class="content">
-                    <div class="subject">${subject}</div>
-                    <div class="message">${message}</div>
+                    <div class="subject">${escapeHtml(subject)}</div>
+                    <div class="message">${escapeHtml(message)}</div>
                 </div>
                 <div class="footer">
                     <p>&copy; ${new Date().getFullYear()} RHS Coding Club. All rights reserved.</p>
                     <p>
-                        <a href="${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}">Visit our website</a> |
-                        <a href="${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/contact">Contact us</a>
+                        <a href="${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}">Visit our website</a> |
+                        <a href="${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/contact">Contact us</a>
                     </p>
                     <div class="unsubscribe">
-                        <a href="${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/newsletter/unsubscribe">Unsubscribe from newsletter</a>
+                        <a href="${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/newsletter/unsubscribe">Unsubscribe from newsletter</a>
                     </div>
                 </div>
             </div>
@@ -1053,8 +1065,8 @@ class BrevoService {
         
         © ${new Date().getFullYear()} RHS Coding Club. All rights reserved.
         
-        Website: ${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}
-        To unsubscribe: ${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/newsletter/unsubscribe
+        Website: ${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}
+        To unsubscribe: ${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/newsletter/unsubscribe
       `;
 
       const emailSettings = await this.getEmailSettings();

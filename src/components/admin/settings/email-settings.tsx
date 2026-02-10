@@ -18,7 +18,7 @@ import { Save, Loader2, Mail, Bell, Clock, FileText, Send, AlertCircle } from 'l
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export function EmailSettingsComponent() {
-  const { userProfile } = useAuth();
+  const { user, userProfile } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
@@ -158,10 +158,12 @@ export function EmailSettingsComponent() {
     try {
       setTestEmailLoading(true);
       
+      const token = await user?.getIdToken();
       const response = await fetch('/api/admin/test-email', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(token && { Authorization: `Bearer ${token}` }),
         },
         body: JSON.stringify({
           recipientEmail: userProfile.email,

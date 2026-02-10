@@ -1,3 +1,4 @@
+import React from 'react';
 import { Resource } from '@/lib/firebase-collections';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -25,7 +26,7 @@ const getLevelColor = (level: string) => {
   }
 };
 
-export function ResourceCard({ resource, isBookmarked, onToggleBookmark }: ResourceCardProps) {
+export const ResourceCard = React.memo(function ResourceCard({ resource, isBookmarked, onToggleBookmark }: ResourceCardProps) {
   return (
     <Card className="h-full">
       <CardHeader>
@@ -78,4 +79,4 @@ export function ResourceCard({ resource, isBookmarked, onToggleBookmark }: Resou
       </CardContent>
     </Card>
   );
-}
+});

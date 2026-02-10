@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { collection, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
+import { collection, query, where, orderBy, limit, getDocs, getCountFromServer } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/contexts/auth-context';
 import { Event, Project, Submission } from '@/lib/firebase-collections';
@@ -114,13 +114,22 @@ export function useDashboardData(): DashboardData {
           .filter(s => s.status === 'pass')
           .reduce((total, s) => total + s.points, 0);
 
-        // Fetch all users to calculate rank
-        const usersQuery = query(collection(db, 'users'));
-        const usersSnapshot = await getDocs(usersQuery);
-        const totalUsers = usersSnapshot.size;
+        // Get total user count efficiently without fetching all documents
+        const totalUsersSnapshot = await getCountFromServer(
+          query(collection(db, 'users'), where('role', 'in', ['member', 'officer', 'admin']))
+        );
+        const totalUsers = totalUsersSnapshot.data().count;
 
-        // Calculate user rank based on points (simplified)
-        const userRank = Math.max(1, Math.floor(Math.random() * totalUsers));
+        // Calculate real rank: count users with more points than current user
+        let userRank = 1;
+        if (challengePoints > 0) {
+          const higherRankedSnapshot = await getCountFromServer(
+            query(collection(db, 'users'), where('points', '>', challengePoints))
+          );
+          userRank = higherRankedSnapshot.data().count + 1;
+        } else {
+          userRank = totalUsers; // No points = last place
+        }
 
         // Fetch upcoming events
         const eventsQuery = query(
