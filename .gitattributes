@@ -1,0 +1,21 @@
+# Normalize all text files to LF in the repository and on checkout.
+# Matches "endOfLine": "lf" in .prettierrc and prevents editors or tooling
+# from reintroducing CRLF across the tree.
+* text=auto eol=lf
+
+# Explicitly binary so Git never applies line-ending conversion to them.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.avif binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.otf binary
+*.pdf binary
+*.mp4 binary
+*.webm binary
