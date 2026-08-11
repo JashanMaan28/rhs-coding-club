@@ -1,14 +1,22 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   // Enable experimental features
   experimental: {
-    optimizePackageImports: ['lucide-react', '@radix-ui/react-icons', 'three', 'postprocessing'],
+    optimizePackageImports: [
+      'lucide-react',
+      '@radix-ui/react-icons',
+      'three',
+      'postprocessing',
+    ],
   },
-  
+
   // Image optimization
   images: {
     formats: ['image/webp', 'image/avif'],
+    // Next.js 16 rejects any `quality` not listed here with HTTP 400.
+    // 85 is required by <ResponsiveImage>; 75 is the framework default.
+    qualities: [75, 85],
     minimumCacheTTL: 60,
     dangerouslyAllowSVG: true,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
@@ -23,13 +31,13 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  
+
   // Compression
   compress: true,
-  
+
   // Performance optimizations
   poweredByHeader: false,
-  
+
   // Security headers
   async headers() {
     return [
@@ -91,7 +99,7 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-  
+
   // Redirects for SEO
   async redirects() {
     return [
@@ -107,16 +115,12 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-  
-  // Bundle analyzer for production builds
-  webpack: (config, { dev, isServer }) => {
-    // Optimize bundle in production
-    if (!dev && !isServer) {
-      config.optimization.splitChunks.chunks = 'all';
-    }
-    
-    return config;
-  },
+
+  // Turbopack is the default bundler as of Next.js 16. An empty config is
+  // sufficient here and keeps `next build` from erroring on a stray webpack
+  // config. The previous `webpack: ...` splitChunks tweak was removed: builds
+  // have used --turbopack since before this upgrade, so it never took effect.
+  turbopack: {},
 };
 
 export default nextConfig;
