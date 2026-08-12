@@ -8,3 +8,7 @@ build
 .DS_Store
 coverage
 .nyc_output
+
+# Next.js rewrites tsconfig.json on every build (it enforces "jsx": "react-jsx"
+# and its own array formatting). Leaving it to Prettier causes format/build churn.
+tsconfig.json

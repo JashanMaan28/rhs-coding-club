@@ -1,6 +1,7 @@
 import { ImageResponse } from 'next/og';
 
-export const runtime = 'edge';
+// The Edge Runtime is deprecated as of Next.js 16; omitting `runtime` uses the
+// default Node.js runtime, which supports ImageResponse.
 
 export const alt = 'RHS Coding Club';
 export const size = {
@@ -54,7 +55,7 @@ export default async function Image() {
           >
             💻
           </div>
-          
+
           {/* Title */}
           <h1
             style={{
@@ -68,7 +69,7 @@ export default async function Image() {
           >
             RHS Coding Club
           </h1>
-          
+
           {/* Subtitle */}
           <p
             style={{
@@ -80,10 +81,11 @@ export default async function Image() {
               textShadow: '1px 1px 2px rgba(0, 0, 0, 0.3)',
             }}
           >
-            Learn programming, participate in challenges, build projects, and connect with fellow developers
+            Learn programming, participate in challenges, build projects, and
+            connect with fellow developers
           </p>
         </div>
-        
+
         {/* Footer */}
         <div
           style={{
